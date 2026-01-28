@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
     "target": "es2022",
-    "module": "es2022",
+    "module": "commonjs",
+    // "lib": ["es2022"],
     "rootDir": "./src",
     "outDir": "./dist",
     "typeRoots": ["./src/@types", "./node_modules/@types"],
@@ -13,7 +14,11 @@
     // "paths": {
     //   "@/*": ["src/*"]
     // }
+    
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules"],
+  "ts-node": {
+    "require": ["tsconfig-paths/register"]
+  }
 }

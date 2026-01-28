@@ -1,7 +1,5 @@
 'use strict';
 
-Object.defineProperty(exports, '__esModule', { value: true });
-
 var express = require('express');
 var runtime2 = require('@prisma/client/runtime/client');
 var adapterMariadb = require('@prisma/adapter-mariadb');
@@ -482,22 +480,6 @@ var require_cli_options = __commonJS({
     };
   }
 });
-var router = express.Router();
-router.get("/", (req, res) => {
-  res.send("this is login page");
-});
-router.post("/", async (req, res) => {
-  const name = req.body.name;
-  const email = req.body.email;
-  const generatedUser = await prisma.userinfo.create({
-    data: {
-      email,
-      name
-    }
-  });
-  res.status(201).send(generatedUser);
-});
-var authentication_default = router;
 
 // node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/config.js
 (function() {
@@ -572,9 +554,25 @@ app.use("/login", authentication_default);
 app.listen(5e3, () => {
   console.log("server running in port 5000");
 });
-var app_default = app;
 
-exports.default = app_default;
-exports.prisma = prisma;
-//# sourceMappingURL=app.js.map
-//# sourceMappingURL=app.js.map
+// src/routes/login/authentication.ts
+var router = express.Router();
+router.get("/", (req, res) => {
+  res.send("this is login page");
+});
+router.post("/", async (req, res) => {
+  const name = req.body.name;
+  const email = req.body.email;
+  const generatedUser = await prisma.userinfo.create({
+    data: {
+      email,
+      name
+    }
+  });
+  res.status(201).send(generatedUser);
+});
+var authentication_default = router;
+
+module.exports = authentication_default;
+//# sourceMappingURL=authentication.js.map
+//# sourceMappingURL=authentication.js.map
