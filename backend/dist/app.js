@@ -482,11 +482,9 @@ var require_cli_options = __commonJS({
     };
   }
 });
-var router = express.Router();
-router.get("/login", (req, res) => {
-  res.send("this is login page");
-});
-router.post("/login", async (req, res) => {
+
+// src/controller/login.controller.ts
+var loginController = async (req, res) => {
   const name = req.body.name;
   const email = req.body.email;
   const generatedUser = await prisma.userinfo.create({
@@ -496,8 +494,34 @@ router.post("/login", async (req, res) => {
     }
   });
   res.status(201).send(generatedUser);
+};
+
+// src/routes/login.routes.ts
+var router = express.Router();
+router.get("/", (req, res) => {
+  res.send("this is login page");
 });
-var authentication_default = router;
+router.post("/", loginController);
+var login_routes_default = router;
+
+// src/controller/register.controller.ts
+var registerPostController = (req, res) => {
+  const username = req.body.username;
+  req.body.password;
+  res.send(`registered as ${username}`);
+};
+
+// src/routes/register.routes.ts
+var router2 = express.Router();
+router2.get("/", (req, res) => {
+  res.send("this is register page");
+});
+router2.post("/", registerPostController);
+var register_routes_default = router2;
+var router3 = express.Router();
+router3.use("/login", login_routes_default);
+router3.use("/register", register_routes_default);
+var routes_default = router3;
 
 // node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/config.js
 (function() {
@@ -555,10 +579,6 @@ runtime2__namespace.Extensions.defineExtension;
 // src/generated/prisma/client.ts
 var PrismaClient = getPrismaClientClass();
 var app = express__default.default();
-app.use(express__default.default.json());
-app.get("/", (req, res) => {
-  res.send("this is homepage");
-});
 var dbconfig = {
   host: process.env.DB_HOST,
   port: Number(process.env.PORT),
@@ -566,12 +586,14 @@ var dbconfig = {
   password: process.env.PASSWORD,
   database: process.env.DATABASE
 };
-console.log("USER:", process.env.HOST);
 var prisma = new PrismaClient({
   adapter: new adapterMariadb.PrismaMariaDb(dbconfig)
 });
-console.log(dbconfig);
-app.use("/", authentication_default);
+app.use(express__default.default.json());
+app.get("/", (req, res) => {
+  res.send("this is homepage");
+});
+app.use("/", routes_default);
 app.listen(5e3, () => {
   console.log("server running in port 5000");
 });
