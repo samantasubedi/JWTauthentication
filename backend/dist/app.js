@@ -483,10 +483,10 @@ var require_cli_options = __commonJS({
   }
 });
 var router = express.Router();
-router.get("/", (req, res) => {
+router.get("/login", (req, res) => {
   res.send("this is login page");
 });
-router.post("/", async (req, res) => {
+router.post("/login", async (req, res) => {
   const name = req.body.name;
   const email = req.body.email;
   const generatedUser = await prisma.userinfo.create({
@@ -559,16 +559,19 @@ app.use(express__default.default.json());
 app.get("/", (req, res) => {
   res.send("this is homepage");
 });
+var dbconfig = {
+  host: process.env.DB_HOST,
+  port: Number(process.env.PORT),
+  user: process.env.DB_USERNAME,
+  password: process.env.PASSWORD,
+  database: process.env.DATABASE
+};
+console.log("USER:", process.env.HOST);
 var prisma = new PrismaClient({
-  adapter: new adapterMariadb.PrismaMariaDb({
-    host: "localhost",
-    port: 3306,
-    user: "root",
-    password: "1234",
-    database: "jwt"
-  })
+  adapter: new adapterMariadb.PrismaMariaDb(dbconfig)
 });
-app.use("/login", authentication_default);
+console.log(dbconfig);
+app.use("/", authentication_default);
 app.listen(5e3, () => {
   console.log("server running in port 5000");
 });

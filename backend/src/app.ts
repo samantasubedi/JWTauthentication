@@ -10,17 +10,19 @@ app.get("/", (req, res) => {
   res.send("this is homepage");
 });
 
+const dbconfig = {
+  host: process.env.DB_HOST,
+  port: Number(process.env.PORT),
+  user: process.env.DB_USERNAME,
+  password: process.env.PASSWORD,
+  database: process.env.DATABASE,
+};
+console.log("USER:", process.env.HOST);
 export const prisma = new PrismaClient({
-  adapter: new PrismaMariaDb({
-    host: "localhost",
-    port: 3306,
-    user: "root",
-    password: "1234",
-    database: "jwt",
-  }),
+  adapter: new PrismaMariaDb(dbconfig),
 });
-
-app.use("/login", router);
+console.log(dbconfig);
+app.use("/", router);
 app.listen(5000, () => {
   console.log("server running in port 5000");
 });
