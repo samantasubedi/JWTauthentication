@@ -3,6 +3,8 @@
 Object.defineProperty(exports, '__esModule', { value: true });
 
 var express = require('express');
+var bcrypt = require('bcrypt-ts');
+var jwt = require('jsonwebtoken');
 var runtime2 = require('@prisma/client/runtime/client');
 var adapterMariadb = require('@prisma/adapter-mariadb');
 
@@ -27,6 +29,8 @@ function _interopNamespace(e) {
 }
 
 var express__default = /*#__PURE__*/_interopDefault(express);
+var bcrypt__default = /*#__PURE__*/_interopDefault(bcrypt);
+var jwt__default = /*#__PURE__*/_interopDefault(jwt);
 var runtime2__namespace = /*#__PURE__*/_interopNamespace(runtime2);
 
 var __getOwnPropNames = Object.getOwnPropertyNames;
@@ -482,18 +486,24 @@ var require_cli_options = __commonJS({
     };
   }
 });
-
-// src/controller/login.controller.ts
 var loginController = async (req, res) => {
-  const name = req.body.name;
-  const email = req.body.email;
-  const generatedUser = await prisma.userinfo.create({
-    data: {
-      email,
-      name
-    }
+  const username = req.body.username;
+  const password = req.body.password;
+  const secretKey = "asdfsdfsadfasdfasdfasdfsdfd";
+  const user = await prisma.userlogininfo.findFirst({
+    where: { username }
   });
-  res.status(201).send(generatedUser);
+  if (!user) {
+    res.send("user dont exist");
+  } else {
+    const ispasswordvalid = await bcrypt__default.default.compare(password, user.password);
+    if (ispasswordvalid) {
+      const token = jwt__default.default.sign(username, secretKey);
+      res.json({ message: "login sucessfull", token });
+    } else if (!ispasswordvalid) {
+      res.send("Incorrect password");
+    }
+  }
 };
 
 // src/routes/login.routes.ts
@@ -503,19 +513,26 @@ router.get("/", (req, res) => {
 });
 router.post("/", loginController);
 var login_routes_default = router;
-
-// src/controller/register.controller.ts
-var registerPostController = (req, res) => {
+var registerPostController = async (req, res) => {
   const username = req.body.username;
-  req.body.password;
+  const password = req.body.password;
+  const hashedpassword = await bcrypt__default.default.hash(password, 10);
+  await prisma.userlogininfo.create({
+    data: {
+      username,
+      password: hashedpassword
+    }
+  });
   res.send(`registered as ${username}`);
+};
+var registerGetController = async (req, res) => {
+  const users = await prisma.userlogininfo.findMany();
+  res.json({ message: "this is regestration page", registered_users: users });
 };
 
 // src/routes/register.routes.ts
 var router2 = express.Router();
-router2.get("/", (req, res) => {
-  res.send("this is register page");
-});
+router2.get("/", registerGetController);
 router2.post("/", registerPostController);
 var register_routes_default = router2;
 var router3 = express.Router();
@@ -538,14 +555,14 @@ var config = {
   "clientVersion": "7.3.0",
   "engineVersion": "9d6ad21cbbceab97458517b147a6a09ff43aa735",
   "activeProvider": "mysql",
-  "inlineSchema": '// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\n// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?\n// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init\n\ngenerator client {\n  provider = "prisma-client"\n  output   = "../src/generated/prisma"\n}\n\ndatasource db {\n  provider = "mysql"\n}\n\nmodel userinfo {\n  name  String\n  id    String @id @default(cuid())\n  email String\n}\n',
+  "inlineSchema": '// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\n// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?\n// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init\n\ngenerator client {\n  provider = "prisma-client"\n  output   = "../src/generated/prisma"\n}\n\ndatasource db {\n  provider = "mysql"\n}\n\nmodel userinfo {\n  name  String\n  id    String @id @default(cuid())\n  email String\n}\n\nmodel userlogininfo {\n  username String @id\n  password String\n}\n',
   "runtimeDataModel": {
     "models": {},
     "enums": {},
     "types": {}
   }
 };
-config.runtimeDataModel = JSON.parse('{"models":{"userinfo":{"fields":[{"name":"name","kind":"scalar","type":"String"},{"name":"id","kind":"scalar","type":"String"},{"name":"email","kind":"scalar","type":"String"}],"dbName":null}},"enums":{},"types":{}}');
+config.runtimeDataModel = JSON.parse('{"models":{"userinfo":{"fields":[{"name":"name","kind":"scalar","type":"String"},{"name":"id","kind":"scalar","type":"String"},{"name":"email","kind":"scalar","type":"String"}],"dbName":null},"userlogininfo":{"fields":[{"name":"username","kind":"scalar","type":"String"},{"name":"password","kind":"scalar","type":"String"}],"dbName":null}},"enums":{},"types":{}}');
 async function decodeBase64AsWasm(wasmBase64) {
   const { Buffer: Buffer2 } = await import('buffer');
   const wasmArray = Buffer2.from(wasmBase64, "base64");

@@ -18,3 +18,8 @@ model userinfo {
   id    String @id @default(cuid())
   email String
 }
+
+model userlogininfo {
+  username String @id
+  password String
+}
