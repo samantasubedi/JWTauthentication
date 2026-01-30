@@ -2,10 +2,12 @@ import { Request, Response } from "express";
 import { prisma } from "../app";
 import bcrypt from "bcrypt-ts";
 import jwt from "jsonwebtoken";
-export const loginController = async (req: Request, res: Response) => {
+import "dotenv/config"
+export const loginPostController = async (req: Request, res: Response) => {
   const username = req.body.username;
   const password = req.body.password;
-  const secretKey = "asdfsdfsadfasdfasdfasdfsdfd";
+  const secretKey = process.env.SECRET_KEY!
+  console.log(secretKey)
 
   const user = await prisma.userlogininfo.findFirst({
     where: { username: username },

@@ -3,8 +3,8 @@
 Object.defineProperty(exports, '__esModule', { value: true });
 
 var express = require('express');
-var bcrypt = require('bcrypt-ts');
 var jwt = require('jsonwebtoken');
+var bcrypt = require('bcrypt-ts');
 var runtime2 = require('@prisma/client/runtime/client');
 var adapterMariadb = require('@prisma/adapter-mariadb');
 
@@ -29,8 +29,8 @@ function _interopNamespace(e) {
 }
 
 var express__default = /*#__PURE__*/_interopDefault(express);
-var bcrypt__default = /*#__PURE__*/_interopDefault(bcrypt);
 var jwt__default = /*#__PURE__*/_interopDefault(jwt);
+var bcrypt__default = /*#__PURE__*/_interopDefault(bcrypt);
 var runtime2__namespace = /*#__PURE__*/_interopNamespace(runtime2);
 
 var __getOwnPropNames = Object.getOwnPropertyNames;
@@ -486,10 +486,37 @@ var require_cli_options = __commonJS({
     };
   }
 });
-var loginController = async (req, res) => {
+
+// node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/config.js
+(function() {
+  require_main().config(
+    Object.assign(
+      {},
+      require_env_options(),
+      require_cli_options()(process.argv)
+    )
+  );
+})();
+var secret = process.env.SECRET_KEY;
+var authMiddleware = (req, res, next) => {
+  const token = req.header("Authorization");
+  if (!token) {
+    return res.send("access denied, token not found");
+  }
+  try {
+    console.log(token.split("")[1]);
+    const decodedData = jwt__default.default.verify(token, secret);
+    res.locals.user = decodedData;
+    next();
+  } catch (err) {
+    res.status(400).send("invalid token");
+  }
+};
+var loginPostController = async (req, res) => {
   const username = req.body.username;
   const password = req.body.password;
-  const secretKey = "asdfsdfsadfasdfasdfasdfsdfd";
+  const secretKey = process.env.SECRET_KEY;
+  console.log(secretKey);
   const user = await prisma.userlogininfo.findFirst({
     where: { username }
   });
@@ -511,7 +538,7 @@ var router = express.Router();
 router.get("/", (req, res) => {
   res.send("this is login page");
 });
-router.post("/", loginController);
+router.post("/", loginPostController);
 var login_routes_default = router;
 var registerPostController = async (req, res) => {
   const username = req.body.username;
@@ -535,21 +562,18 @@ var router2 = express.Router();
 router2.get("/", registerGetController);
 router2.post("/", registerPostController);
 var register_routes_default = router2;
-var router3 = express.Router();
-router3.use("/login", login_routes_default);
-router3.use("/register", register_routes_default);
-var routes_default = router3;
-
-// node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/config.js
-(function() {
-  require_main().config(
-    Object.assign(
-      {},
-      require_env_options(),
-      require_cli_options()(process.argv)
-    )
+var router3 = express__default.default();
+router3.get("/", (req, res) => {
+  res.send(
+    "this is user dashboard that can only be accessed by logged in users"
   );
-})();
+});
+var userdashbaord_route_default = router3;
+var router4 = express.Router();
+router4.use("/login", login_routes_default);
+router4.use("/register", register_routes_default);
+router4.use("/dashboard", authMiddleware, userdashbaord_route_default);
+var routes_default = router4;
 var config = {
   "previewFeatures": [],
   "clientVersion": "7.3.0",
