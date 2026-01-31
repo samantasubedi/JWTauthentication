@@ -3,9 +3,9 @@ import router from "./routes/index";
 import "dotenv/config";
 import { PrismaClient } from "./generated/prisma/client";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
-
+import cookieParser from "cookie-parser"
 const app = express();
-
+app.use(cookieParser())
 const dbconfig = {
   host: process.env.DB_HOST,
   port: Number(process.env.PORT),

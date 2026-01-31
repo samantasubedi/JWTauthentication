@@ -3,10 +3,11 @@
 Object.defineProperty(exports, '__esModule', { value: true });
 
 var express = require('express');
-var jwt = require('jsonwebtoken');
+var jwt2 = require('jsonwebtoken');
 var bcrypt = require('bcrypt-ts');
 var runtime2 = require('@prisma/client/runtime/client');
 var adapterMariadb = require('@prisma/adapter-mariadb');
+var cookieParser = require('cookie-parser');
 
 function _interopDefault (e) { return e && e.__esModule ? e : { default: e }; }
 
@@ -29,9 +30,10 @@ function _interopNamespace(e) {
 }
 
 var express__default = /*#__PURE__*/_interopDefault(express);
-var jwt__default = /*#__PURE__*/_interopDefault(jwt);
+var jwt2__default = /*#__PURE__*/_interopDefault(jwt2);
 var bcrypt__default = /*#__PURE__*/_interopDefault(bcrypt);
 var runtime2__namespace = /*#__PURE__*/_interopNamespace(runtime2);
+var cookieParser__default = /*#__PURE__*/_interopDefault(cookieParser);
 
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
@@ -497,16 +499,16 @@ var require_cli_options = __commonJS({
     )
   );
 })();
-var secret = process.env.SECRET_KEY;
+var accessSecret = process.env.ACCESS_SECRET;
 var authMiddleware = (req, res, next) => {
   const token = req.header("Authorization");
   if (!token) {
     return res.send("access denied, token not found");
   }
   try {
-    console.log(token.split("")[1]);
-    const decodedData = jwt__default.default.verify(token, secret);
+    const decodedData = jwt2__default.default.verify(token, accessSecret);
     res.locals.user = decodedData;
+    console.log(decodedData);
     next();
   } catch (err) {
     res.status(400).send("invalid token");
@@ -515,8 +517,8 @@ var authMiddleware = (req, res, next) => {
 var loginPostController = async (req, res) => {
   const username = req.body.username;
   const password = req.body.password;
-  const secretKey = process.env.SECRET_KEY;
-  console.log(secretKey);
+  const accessSecret3 = process.env.ACCESS_SECRET;
+  const refreshSecret2 = process.env.REFRESH_SECRET;
   const user = await prisma.userlogininfo.findFirst({
     where: { username }
   });
@@ -525,8 +527,14 @@ var loginPostController = async (req, res) => {
   } else {
     const ispasswordvalid = await bcrypt__default.default.compare(password, user.password);
     if (ispasswordvalid) {
-      const token = jwt__default.default.sign(username, secretKey);
-      res.json({ message: "login sucessfull", token });
+      const accessToken = jwt2__default.default.sign(username, accessSecret3);
+      const refreshToken = jwt2__default.default.sign(username, refreshSecret2);
+      res.cookie("refreshToken", refreshToken, { httpOnly: true, sameSite: "strict", secure: true });
+      res.json({
+        message: "login sucessfull",
+        accessToken,
+        refreshToken
+      });
     } else if (!ispasswordvalid) {
       res.send("Incorrect password");
     }
@@ -569,11 +577,29 @@ router3.get("/", (req, res) => {
   );
 });
 var userdashbaord_route_default = router3;
-var router4 = express.Router();
-router4.use("/login", login_routes_default);
-router4.use("/register", register_routes_default);
-router4.use("/dashboard", authMiddleware, userdashbaord_route_default);
-var routes_default = router4;
+var refreshSecret = process.env.REFRESH_SECRET;
+var accessSecret2 = process.env.ACCESS_SECRET;
+var refreshPostController = (req, res) => {
+  const refreshToken = req.cookies.refreshToken;
+  const username = jwt2__default.default.verify(refreshToken, refreshSecret);
+  if (!username) {
+    res.status(401).send("invalid refresh token");
+  } else if (username) {
+    const newAccessToken = jwt2__default.default.sign(username, accessSecret2);
+    res.json({ accessToken: newAccessToken });
+  }
+};
+
+// src/routes/refresh.route.ts
+var router4 = express__default.default();
+router4.post("/", refreshPostController);
+var refresh_route_default = router4;
+var router5 = express.Router();
+router5.use("/login", login_routes_default);
+router5.use("/register", register_routes_default);
+router5.use("/dashboard", authMiddleware, userdashbaord_route_default);
+router5.use("/refresh", refresh_route_default);
+var routes_default = router5;
 var config = {
   "previewFeatures": [],
   "clientVersion": "7.3.0",
@@ -620,6 +646,7 @@ runtime2__namespace.Extensions.defineExtension;
 // src/generated/prisma/client.ts
 var PrismaClient = getPrismaClientClass();
 var app = express__default.default();
+app.use(cookieParser__default.default());
 var dbconfig = {
   host: process.env.DB_HOST,
   port: Number(process.env.PORT),
